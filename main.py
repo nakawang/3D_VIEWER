@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from fbs_runtime.application_context.PyQt5 import ApplicationContext
+#from fbs_runtime.application_context.PyQt5 import ApplicationContext
 import vtk,sys,numpy,os
 sys.path.append(os.curdir)
 from numpy import random,genfromtxt,size
@@ -16,7 +16,6 @@ import subprocess
 loadPath=os.path.join(os.curdir,"1.xyz")
 
 class XYZviewer(QtWidgets.QFrame):
-    textOut=QtCore.pyqtSignal()
     def __init__(self, parent, dataPath):
         super(XYZviewer,self).__init__(parent)
         self.interactor = QVTKRenderWindowInteractor(self)
@@ -26,7 +25,7 @@ class XYZviewer(QtWidgets.QFrame):
         self.setLayout(self.layout)
         self.pointCloud = VtkPointCloud()
         self.pcdCollection=[]
-        self.xyzLoader = loaderThread()
+        
         self.actors = []
         #self.load_data(loadPath)
         if dataPath != None:
@@ -47,7 +46,7 @@ class XYZviewer(QtWidgets.QFrame):
         #renderer.SetBackground(colors.GetColor3d("BkgColor"))
         self.pointCloud.setLUTRange(0,10)
         cam=self.renderer.GetActiveCamera()
-        cam.Azimuth(45)
+        cam.Azimuth(-45)
         cam.Elevation(60)
         #cam.Roll(90)
         cam.SetViewUp(0,0,1)
@@ -83,7 +82,7 @@ class XYZviewer(QtWidgets.QFrame):
     # Pack to class
         #self.renderer=renderer
         #self.interactor=interactor
-        self.xyzLoader.signalOut.connect(self.__GetDataFromThread)
+        
         
     def start(self):
         self.interactor.Start()
@@ -170,7 +169,7 @@ class XYZviewer(QtWidgets.QFrame):
         cubeAxesActor.YAxisMinorTickVisibilityOff()
         cubeAxesActor.ZAxisMinorTickVisibilityOn()
         self.cubeAxesActor=cubeAxesActor
-    def add_newData(self,filename):
+    def add_newData(self,pcd):
         
         '''
         print("generate xyz")
@@ -179,9 +178,8 @@ class XYZviewer(QtWidgets.QFrame):
             pcd.addPoint(point)
         self.renderer.AddActor(pcd.vtkActor)
         '''
-        self.xyzLoader.setFileName(filename)
-        self.xyzLoader.start()
-
+        self.pointCloud=pcd
+        self.addActor()
     def addActor(self):
         """
         self.pcdCollection.append(self.xyzLoader.pcd)
@@ -210,7 +208,6 @@ class XYZviewer(QtWidgets.QFrame):
         
         self.renderer.ResetCamera()
         self.refresh_renderer()
-        
     def removeAll(self):
         actors = self.renderer.GetActors()
         #print(actors)
@@ -226,12 +223,7 @@ class XYZviewer(QtWidgets.QFrame):
         #self.renderer.ResetCamera()
         renderWindow = self.interactor.GetRenderWindow()
         renderWindow.Render()
-    def __GetDataFromThread(self):
-        self.pointCloud=self.xyzLoader.pcd
-        self.addActor()
-        if "raw" in self.xyzLoader.fileName:
-            self.rawInfo = self.xyzLoader.rawInfo
-            self.textOut.emit()
+    
             
 class loaderThread(QThread):
     signalStart = QtCore.pyqtSignal(int)
@@ -242,6 +234,7 @@ class loaderThread(QThread):
         self.fileName = None
         self.pcd = None
         self.rawInfo=None
+        self.isWorking=False
     def setFileName(self,fileName):
         self.fileName = fileName
     def __getPointCloud(self):
@@ -250,16 +243,19 @@ class loaderThread(QThread):
         minH=xyz[:,2].min()
         maxH=xyz[:,2].max()
         count = len(xyz)
-        #print(count)
+        print(count)
         pcd=VtkPointCloud(minH,maxH,count)
         pcd.clearPoints()
-        count = range(size(xyz,0))
-        self.signalStart.emit(count)
+        counter=size(xyz,0)
+        print(counter)
+        self.signalStart.emit(counter)
+        print("b")
         for k in range(size(xyz,0)):
             self.signalNow.emit(k)
             point = xyz[k]
             pcd.addPoint(point)
         self.pcd = pcd
+        print("b")
     def __getRawToPointCloud(self):
         rLoader=rawLoader()
         rLoader.setRawPath(self.fileName)
@@ -272,8 +268,9 @@ class loaderThread(QThread):
         pcd = VtkPointCloud(zMin,zMax,count)
         pcd.clearPoints()
         xyz = rLoader.rawToXYZ()
-        counter = range(size(xyz,0))
+        counter = size(xyz,0)
         self.signalStart.emit(counter)
+        
         for i in range(size(xyz,0)):
             self.signalNow.emit(i)
             point = xyz[i]
@@ -285,7 +282,8 @@ class loaderThread(QThread):
             print("filename is",self.fileName)
             self.__getPointCloud()
             self.signalOut.emit()
-        if "raw" in self.fileName:
+            print("b")
+        elif "raw" in self.fileName:
             self.__getRawToPointCloud()
             self.signalOut.emit()
         else:
@@ -299,7 +297,9 @@ class XYZviewerApp(QtWidgets.QMainWindow):
         self.vtk_widget = None
         self.ui = None
         self.dataPath = dataPath
+        self.xyzLoader = loaderThread()
         self.setup(self.dataPath)
+        
     def setup(self,dataPath):
         import ThreeD_viewer
         self.ui = ThreeD_viewer.Ui_MainWindow()
@@ -322,16 +322,20 @@ class XYZviewerApp(QtWidgets.QMainWindow):
         #self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
         
         self.tab2_setup()
-        self.vtk_widget.textOut.connect(self.__UpdateText)
+        
         #logo=QtGui.QPixmap(".\\benano.png")
         #self.ui.label_6.setPixmap(logo)
         #self.ui.label_6.setScaledContents(True)
         #self.ui.label_6.setAttribute(QtCore.Qt.WA_TranslucentBackground)
         #self.ui.label_6.show()
-        self.vtk_widget.textOut.connect(self.__ResetSlider)
         self.ui.verticalSlider.valueChanged.connect(self.__on_valueChanged)
         self.ui.verticalSlider_2.valueChanged.connect(self.__on_valueChanged)
         self.ui.label_6.setFont(QtGui.QFont("Courier New",40))
+        
+        self.xyzLoader.signalOut.connect(self.__GetDataFromThread)
+        self.xyzLoader.signalStart.connect(self.__onStart_ProgressBar)
+        self.xyzLoader.signalNow.connect(self.__onNow_ProgressBar)
+        self.xyzLoader.signalOut.connect(self.__onClose_ProgressBar)
         self.showMaximized()
     def initialize(self):
         self.vtk_widget.start()
@@ -421,6 +425,12 @@ class XYZviewerApp(QtWidgets.QMainWindow):
         self.vtk_widget.pointCloud.setLUTRange(min,max)
         #self.vtk_widget.reset_Camera()
         self.vtk_widget.refresh_renderer()
+    def __GetDataFromThread(self):
+        pcd = self.xyzLoader.pcd
+        self.vtk_widget.add_newData(pcd)
+        self.__ResetSlider()
+        if "raw" in self.xyzLoader.fileName:
+            self.__UpdateText(self.xyzLoader.rawInfo)
     def addPCDData(self):
         self.pcd_widget.add_newData()
     def addPLYData(self):
@@ -428,7 +438,8 @@ class XYZviewerApp(QtWidgets.QMainWindow):
     def refreshViewer(self):
         print("1")
         print(self.dataPath)
-        self.vtk_widget.add_newData(self.dataPath)
+        self.xyzLoader.setFileName(self.dataPath)
+        self.xyzLoader.start()
     def plytomesh(self):
         bType="2"
         mWidth="0.25"
@@ -455,8 +466,8 @@ class XYZviewerApp(QtWidgets.QMainWindow):
             o3d.io.write_triangle_mesh(path,ply)
             o3d.io.write_triangle_mesh("123.stl",ply,write_ascii = True)
             return
-    def __UpdateText(self):
-        txt = self.vtk_widget.rawInfo
+    def __UpdateText(self,rawInfo):
+        txt = rawInfo
         w,h,x,y=str(txt[0]),str(txt[1]),str(txt[2]),str(txt[3])
         self.ui.label_2.setFont(QtGui.QFont("Courier New",12))
         self.ui.label_2.setText("Raw Width:"+w+"\n"+"Raw Height:"+h+"\n"+"Resolution X:"+x+"\n"+"Resolution Y:"+y+"\n")
@@ -481,9 +492,13 @@ class XYZviewerApp(QtWidgets.QMainWindow):
             self.ply_widget.renderer.SetActiveCamera(cam1)
             self.pcd_widget.renderer.ResetCamera()
             self.ply_widget.renderer.ResetCamera()
-    def __onStart_ProgressBar(self):
+    def __onStart_ProgressBar(self,i):
         self.ui.progressBar.setVisible(1)
-        self.ui.progressBar.setRange(0,0)
+        self.ui.progressBar.setRange(0,i)
+    def __onNow_ProgressBar(self,value):
+        self.ui.progressBar.setValue(value)
+    def __onClose_ProgressBar(self):
+        self.ui.progressBar.setVisible(0)
     def modifiedCallback(self,obj,ev):
         self.ply_widget.interactor.GetRenderWindow().Render()
         self.pcd_widget.interactor.GetRenderWindow().Render()
@@ -500,7 +515,7 @@ if __name__ == '__main__':
     #p="D:\\TestCode\\tutorial-vtk-pyqt-master\\volume\\Export.xyz"
     file=open(".\\Eclippy\\Eclippy.qss","r")
     
-    appctxt = ApplicationContext()
+    #appctxt = ApplicationContext()
     #qss=appctxt.getResource(".\\Eclippy\\Eclippy.qss")
     #poissonRecon=appctxt.getResource(".\\PoissonRecon.exe")
     #file = open(qss,"r")
@@ -509,9 +524,10 @@ if __name__ == '__main__':
         qss=file.read()
         app.setStyleSheet(qss)
     main_window = XYZviewerApp(None)
-    main_window.show()
     main_window.initialize()
-    exit_code = appctxt.app.exec_()      # 2. Invoke appctxt.app.exec_()
-    sys.exit(exit_code)
+    main_window.show()
+    print("end")
+    #exit_code = appctxt.app.exec_()      # 2. Invoke appctxt.app.exec_()
+    #sys.exit(exit_code)
     
     
