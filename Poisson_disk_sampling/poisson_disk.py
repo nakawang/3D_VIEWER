@@ -280,7 +280,7 @@ def sample_poisson_3d(width, height, depth, r_grid, k):
     r_min, r_max = r_grid.min_max()
 
     #Create the grid
-    cell_size = r_max/sqrt(2)
+    cell_size = r_max/sqrt(3)
     inv_cell_size = 1 / cell_size
     r_max_sqr = r_max*r_max
 

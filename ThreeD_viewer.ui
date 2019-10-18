@@ -9,21 +9,45 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1366</width>
-    <height>768</height>
+    <width>1135</width>
+    <height>770</height>
    </rect>
+  </property>
+  <property name="font">
+   <font>
+    <underline>false</underline>
+   </font>
   </property>
   <property name="windowTitle">
    <string>3D viewer (Beta)</string>
   </property>
   <widget class="QWidget" name="centralwidget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>1920</width>
+     <height>1080</height>
+    </size>
+   </property>
    <layout class="QHBoxLayout" name="horizontalLayout">
     <item>
      <widget class="QTabWidget" name="tabWidget">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="font">
        <font>
         <family>Courier New</family>
         <pointsize>12</pointsize>
+        <underline>false</underline>
        </font>
       </property>
       <property name="currentIndex">
@@ -48,9 +72,11 @@
           <widget class="QFrame" name="frame">
            <property name="font">
             <font>
+             <family>Courier New</family>
              <pointsize>20</pointsize>
              <weight>75</weight>
              <bold>true</bold>
+             <underline>false</underline>
             </font>
            </property>
            <property name="autoFillBackground">
@@ -83,6 +109,7 @@
                  <pointsize>12</pointsize>
                  <weight>75</weight>
                  <bold>true</bold>
+                 <underline>false</underline>
                 </font>
                </property>
                <property name="text">
@@ -126,6 +153,7 @@
                  <pointsize>12</pointsize>
                  <weight>75</weight>
                  <bold>true</bold>
+                 <underline>false</underline>
                 </font>
                </property>
                <property name="text">
@@ -154,6 +182,7 @@
                  <pointsize>14</pointsize>
                  <weight>75</weight>
                  <bold>true</bold>
+                 <underline>false</underline>
                 </font>
                </property>
                <property name="text">
@@ -176,6 +205,7 @@
                  <pointsize>14</pointsize>
                  <weight>75</weight>
                  <bold>true</bold>
+                 <underline>false</underline>
                 </font>
                </property>
                <property name="text">
@@ -247,9 +277,11 @@
             </property>
             <property name="font">
              <font>
+              <family>Courier New</family>
               <pointsize>12</pointsize>
               <weight>75</weight>
               <bold>true</bold>
+              <underline>false</underline>
              </font>
             </property>
             <property name="title">
@@ -301,9 +333,11 @@
              </property>
              <property name="font">
               <font>
+               <family>Courier New</family>
                <pointsize>12</pointsize>
                <weight>75</weight>
                <bold>true</bold>
+               <underline>false</underline>
               </font>
              </property>
              <property name="layoutDirection">
@@ -327,9 +361,11 @@
              </property>
              <property name="font">
               <font>
+               <family>Courier New</family>
                <pointsize>12</pointsize>
                <weight>75</weight>
                <bold>true</bold>
+               <underline>false</underline>
               </font>
              </property>
              <property name="layoutDirection">
@@ -340,6 +376,71 @@
              </property>
              <property name="alignment">
               <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+            <widget class="QPushButton" name="resetCam">
+             <property name="geometry">
+              <rect>
+               <x>170</x>
+               <y>60</y>
+               <width>75</width>
+               <height>23</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Reset</string>
+             </property>
+            </widget>
+            <widget class="QPushButton" name="topView">
+             <property name="geometry">
+              <rect>
+               <x>170</x>
+               <y>100</y>
+               <width>75</width>
+               <height>23</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Top</string>
+             </property>
+            </widget>
+            <widget class="QPushButton" name="bottomView">
+             <property name="geometry">
+              <rect>
+               <x>170</x>
+               <y>160</y>
+               <width>75</width>
+               <height>23</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Bottom</string>
+             </property>
+            </widget>
+            <widget class="QPushButton" name="leftView">
+             <property name="geometry">
+              <rect>
+               <x>130</x>
+               <y>130</y>
+               <width>75</width>
+               <height>23</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Left</string>
+             </property>
+            </widget>
+            <widget class="QPushButton" name="rightView">
+             <property name="geometry">
+              <rect>
+               <x>210</x>
+               <y>130</y>
+               <width>75</width>
+               <height>23</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Right</string>
              </property>
             </widget>
            </widget>
@@ -370,7 +471,11 @@
               <widget class="QGroupBox" name="groupBox_2">
                <property name="font">
                 <font>
+                 <family>Courier New</family>
                  <pointsize>12</pointsize>
+                 <weight>75</weight>
+                 <bold>true</bold>
+                 <underline>false</underline>
                 </font>
                </property>
                <property name="title">
@@ -452,6 +557,7 @@ border: 1px solid black;
                <font>
                 <family>Courier New</family>
                 <pointsize>14</pointsize>
+                <underline>false</underline>
                </font>
               </property>
               <property name="text">
@@ -476,7 +582,9 @@ border: 1px solid black;
              <widget class="QPushButton" name="PlytoMesh">
               <property name="font">
                <font>
+                <family>Courier New</family>
                 <pointsize>14</pointsize>
+                <underline>false</underline>
                </font>
               </property>
               <property name="text">
@@ -495,7 +603,9 @@ border: 1px solid black;
              <widget class="QCheckBox" name="checkBox">
               <property name="font">
                <font>
+                <family>Courier New</family>
                 <pointsize>14</pointsize>
+                <underline>false</underline>
                </font>
               </property>
               <property name="text">
@@ -517,6 +627,7 @@ border: 1px solid black;
                <font>
                 <family>Courier New</family>
                 <pointsize>14</pointsize>
+                <underline>false</underline>
                </font>
               </property>
               <property name="text">
@@ -541,7 +652,9 @@ border: 1px solid black;
              <widget class="QPushButton" name="pushButton">
               <property name="font">
                <font>
+                <family>Courier New</family>
                 <pointsize>14</pointsize>
+                <underline>false</underline>
                </font>
               </property>
               <property name="text">
@@ -566,7 +679,9 @@ border: 1px solid black;
               </property>
               <property name="font">
                <font>
+                <family>Courier New</family>
                 <pointsize>14</pointsize>
+                <underline>false</underline>
                </font>
               </property>
               <property name="text">
@@ -612,7 +727,7 @@ border: 1px solid black;
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1366</width>
+     <width>1135</width>
      <height>21</height>
     </rect>
    </property>

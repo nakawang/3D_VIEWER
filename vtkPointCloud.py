@@ -92,3 +92,23 @@ class VtkPointCloud:
         triangulation.SetMapper(mapper)
         triangulation.GetProperty().SetColor(1,0,0)
         return triangulation
+    def surfaceRecon(self):
+        surf = vtk.vtkSurfaceReconstructionFilter()
+        surf.SetInputData(self.vtkPolyData)
+        print(surf)
+        contour = vtk.vtkContourFilter()
+        contour.SetInputConnection(surf.GetOutputPort())
+        contour.SetValue(0,0.0)
+        print(contour)
+        reverse = vtk.vtkReverseSense()
+        reverse.SetInputConnection(contour.GetOutputPort())
+        reverse.ReverseCellsOn()
+        reverse.ReverseNormalsOn()
+        contourMapper=vtk.vtkPolyDataMapper()
+        contourMapper.SetInputConnection(reverse.GetOutputPort())
+        contourMapper.ScalarVisibilityOff()
+        print(contourMapper)
+        contourActor=vtk.vtkActor()
+        contourActor.SetMapper(contourMapper)
+        print(contourActor)
+        return contourActor

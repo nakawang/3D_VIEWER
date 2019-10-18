@@ -12,6 +12,7 @@ from pcdViewer import PCDviewer
 from plyViewer import PLYviewer
 import open3d as o3d
 import subprocess
+from ExceptionHandle.exceptHandle import *
 #import vtk_python_scalarBar
 loadPath=os.path.join(os.curdir,"1.xyz")
 
@@ -25,8 +26,11 @@ class XYZviewer(QtWidgets.QFrame):
         self.setLayout(self.layout)
         self.pointCloud = VtkPointCloud()
         self.pcdCollection=[]
-        
         self.actors = []
+        self.e=ErrorObserver()
+        #self.AddObserver("ErrorEvent",e)
+        if self.e.ErrorOccurred():
+            print(e.ErrorMessage)
         #self.load_data(loadPath)
         if dataPath != None:
             self.add_data(dataPath)
@@ -46,10 +50,11 @@ class XYZviewer(QtWidgets.QFrame):
         #renderer.SetBackground(colors.GetColor3d("BkgColor"))
         self.pointCloud.setLUTRange(0,10)
         cam=self.renderer.GetActiveCamera()
-        cam.Azimuth(-45)
-        cam.Elevation(60)
+        #cam.Azimuth(-45)
+        cam.Elevation(0)
         #cam.Roll(90)
         cam.SetViewUp(0,0,1)
+        cam.SetPosition(0,1,0)
         #cam.Elevation(-10)
         self.renderer.SetActiveCamera(cam)
         self.renderer.ResetCamera()
@@ -67,13 +72,14 @@ class XYZviewer(QtWidgets.QFrame):
     # Interactor
         #renderWindowInteractor = vtk.vtkRenderWindowInteractor()
         self.interactor.SetRenderWindow(renderWindow)
-        self.interactor.SetInteractorStyle(vtk.vtkInteractorStyleTrackballCamera())
+        self.interactor.SetInteractorStyle(vtk.vtkInteractorStyleTerrain())
     # Scalar Bar
         #self.addScalarBar(self.pointCloud.getLUT())
         
         #renderWindow.SetInteractor(self.interactor)
     # Logo
         #self.addLogo()
+        self.renderer.ResetCamera()
     # Begin Interaction
         renderWindow.Render()
         renderWindow.SetWindowName("XYZ Data Viewer:"+ "xyz")
@@ -160,7 +166,7 @@ class XYZviewer(QtWidgets.QFrame):
         cubeAxesActor.GetYAxesGridlinesProperty().SetColor(0.5,0.5,0.5)
         cubeAxesActor.GetZAxesGridlinesProperty().SetColor(0.5,0.5,0.5)
         #控制軸的繪製方式(外,最近,最遠,靜態最近,靜態外)
-        cubeAxesActor.SetFlyMode(0)
+        cubeAxesActor.SetFlyMode(4)
         #設定刻度線的位置(內,外,兩側)
         cubeAxesActor.SetTickLocation(1)
         #網格線樣式(所有,最近,最遠)
@@ -169,6 +175,16 @@ class XYZviewer(QtWidgets.QFrame):
         cubeAxesActor.YAxisMinorTickVisibilityOff()
         cubeAxesActor.ZAxisMinorTickVisibilityOn()
         self.cubeAxesActor=cubeAxesActor
+    def add_axisWidget(self):
+        axes = vtk.vtkAxesActor()
+        axisWidget = vtk.vtkOrientationMarkerWidget()
+        axisWidget.SetOutlineColor(0.9,0.5,0.1)
+        axisWidget.SetOrientationMarker(axes)
+        iren = self.interactor.GetRenderWindow().GetInteractor()
+        axisWidget.SetInteractor(iren)
+        axisWidget.SetViewport(0,0,0.4,0.4)
+        axisWidget.EnabledOn()
+        axisWidget.InteractiveOn()
     def add_newData(self,pcd):
         
         '''
@@ -193,12 +209,15 @@ class XYZviewer(QtWidgets.QFrame):
         self.removeAll()
         isMesh = False
         isDelaunay3D=False
+        isSurfRecon=False
         if isMesh:
             self.pointCloud.generateMesh()
             #self.renderer.AddActor(self.pointCloud.vtkActor)
             self.renderer.AddActor(self.pointCloud.boundaryActor)
         elif isDelaunay3D:
             self.renderer.AddActor(self.pointCloud.delaunay3D())
+        elif isSurfRecon:
+            self.renderer.AddActor(self.pointCloud.surfaceRecon())
         else:
             self.renderer.AddActor(self.pointCloud.vtkActor)
         self.setCubeAxesActor()
@@ -219,10 +238,54 @@ class XYZviewer(QtWidgets.QFrame):
         #print(len(self.pcdCollection))
     def reset_Camera(self):
         self.renderer.ResetCamera()
+        cam=self.renderer.GetActiveCamera()
+        cam.SetViewUp(0,0,1)
+        cam.SetPosition(0,1,0)
+        cam.Azimuth(0)
+        cam.Elevation(90)
+        self.renderer.ResetCamera()
+        self.refresh_renderer()
+    def setCameraTop(self):
+        self.renderer.ResetCamera()
+        cam=self.renderer.GetActiveCamera()
+        cam.SetPosition(0,0,0)
+        cam.SetViewUp(0,1,0)
+        cam.Azimuth(180)
+        #self.renderer.SetActiveCamera(cam)
+        self.renderer.ResetCamera()
+        self.refresh_renderer()
+    def setCameraBot(self):
+        self.renderer.ResetCamera()
+        cam=self.renderer.GetActiveCamera()
+        cam.SetPosition(0,0,0)
+        cam.SetViewUp(0,1,0)
+        #cam.Azimuth(180)
+        #self.renderer.SetActiveCamera(cam)
+        self.renderer.ResetCamera()
+        self.refresh_renderer()
+    def setCameraLeft(self):
+        self.renderer.ResetCamera()
+        cam=self.renderer.GetActiveCamera()
+        #cam.SetPosition(0,0,0)
+        #cam.SetViewUp(0,1,0)
+        cam.Azimuth(-90)
+        #self.renderer.SetActiveCamera(cam)
+        self.renderer.ResetCamera()
+        self.refresh_renderer()
+    def setCameraRight(self):
+        self.renderer.ResetCamera()
+        cam=self.renderer.GetActiveCamera()
+        #cam.SetPosition(0,0,0)
+        #cam.SetViewUp(0,1,0)
+        cam.Azimuth(90)
+        #self.renderer.SetActiveCamera(cam)
+        self.renderer.ResetCamera()
+        self.refresh_renderer()
     def refresh_renderer(self):
         #self.renderer.ResetCamera()
         renderWindow = self.interactor.GetRenderWindow()
         renderWindow.Render()
+        
     
             
 class loaderThread(QThread):
@@ -334,9 +397,14 @@ class XYZviewerApp(QtWidgets.QMainWindow):
         
         self.xyzLoader.signalOut.connect(self.__GetDataFromThread)
         self.xyzLoader.signalStart.connect(self.__onStart_ProgressBar)
-        self.xyzLoader.signalNow.connect(self.__onNow_ProgressBar)
+        #self.xyzLoader.signalNow.connect(self.__onNow_ProgressBar)
         self.xyzLoader.signalOut.connect(self.__onClose_ProgressBar)
         self.showMaximized()
+        self.ui.resetCam.clicked.connect(self.__onClicked_ResetCam)
+        self.ui.topView.clicked.connect(self.__onClicked_ViewUp)
+        self.ui.bottomView.clicked.connect(self.__onClicked_ViewBot)
+        self.ui.leftView.clicked.connect(self.__onClicked_ViewLeft)
+        self.ui.rightView.clicked.connect(self.__onClicked_ViewRight)
     def initialize(self):
         self.vtk_widget.start()
     def tab2_setup(self):
@@ -365,7 +433,8 @@ class XYZviewerApp(QtWidgets.QMainWindow):
         self.ui.checkBox.stateChanged.connect(self.__SyncCamera)
     @pyqtSlot()
     def on_click(self):
-        toolName = self.sender().objectName() 
+        toolName = self.sender().objectName()
+        
         if toolName == "toolButton2":
             path,f = QtWidgets.QFileDialog.getOpenFileName(None,"xyz selector", sys.argv[0] , "*.xyz")
             if path:
@@ -494,7 +563,7 @@ class XYZviewerApp(QtWidgets.QMainWindow):
             self.ply_widget.renderer.ResetCamera()
     def __onStart_ProgressBar(self,i):
         self.ui.progressBar.setVisible(1)
-        self.ui.progressBar.setRange(0,i)
+        self.ui.progressBar.setRange(0,0)
     def __onNow_ProgressBar(self,value):
         self.ui.progressBar.setValue(value)
     def __onClose_ProgressBar(self):
@@ -503,7 +572,16 @@ class XYZviewerApp(QtWidgets.QMainWindow):
         self.ply_widget.interactor.GetRenderWindow().Render()
         self.pcd_widget.interactor.GetRenderWindow().Render()
         return
-
+    def __onClicked_ResetCam(self):
+        self.vtk_widget.reset_Camera()
+    def __onClicked_ViewUp(self):
+        self.vtk_widget.setCameraTop()
+    def __onClicked_ViewBot(self):
+        self.vtk_widget.setCameraBot()
+    def __onClicked_ViewLeft(self):
+        self.vtk_widget.setCameraLeft()
+    def __onClicked_ViewRight(self):
+        self.vtk_widget.setCameraRight()
 def getFilePath():
     if len(sys.argv) >2:
          print('Usage: xyzviewer.py itemfile')
