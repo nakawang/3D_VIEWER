@@ -196,10 +196,6 @@ class Ui_MainWindow(object):
         self.topView.setEnabled(False)
         self.topView.setGeometry(QtCore.QRect(150, 100, 75, 23))
         self.topView.setObjectName("topView")
-        self.bottomView = QtWidgets.QPushButton(self.groupBox)
-        self.bottomView.setEnabled(False)
-        self.bottomView.setGeometry(QtCore.QRect(150, 160, 75, 23))
-        self.bottomView.setObjectName("bottomView")
         self.leftView = QtWidgets.QPushButton(self.groupBox)
         self.leftView.setEnabled(False)
         self.leftView.setGeometry(QtCore.QRect(110, 130, 75, 23))
@@ -422,10 +418,9 @@ class Ui_MainWindow(object):
         self.label_7.setText(_translate("MainWindow", "Max"))
         self.label_8.setText(_translate("MainWindow", "Min"))
         self.resetCam.setText(_translate("MainWindow", "Reset"))
-        self.topView.setText(_translate("MainWindow", "Top"))
-        self.bottomView.setText(_translate("MainWindow", "Bottom"))
-        self.leftView.setText(_translate("MainWindow", "Left"))
-        self.rightView.setText(_translate("MainWindow", "Right"))
+        self.topView.setText(_translate("MainWindow", "Z Up"))
+        self.leftView.setText(_translate("MainWindow", "-"))
+        self.rightView.setText(_translate("MainWindow", "+"))
         self.thetaX.setHtml(_translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"

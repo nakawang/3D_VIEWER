@@ -245,16 +245,14 @@ class XYZviewer(QtWidgets.QFrame):
         center_x,center_y,center_z=self.mainActor.GetCenter()
         self.renderer.ResetCamera()
         cam = self.renderer.GetActiveCamera()
-        print(cam.GetOrientationWXYZ)
-        print(1)
         newCam=vtk.vtkCamera()
         newCam.DeepCopy(cam)
-        print(1)
         w = vtk.vtkTransform()
         w.RotateX(0.)
         w.RotateY(0.)
         w.RotateZ(0.)
         newCam.SetPosition(center_x,center_y,center_z+1)
+        newCam.SetViewUp(0,1,0)
         self.renderer.SetActiveCamera(newCam)
         actors = self.renderer.GetActors()
         for actor in actors:
@@ -268,15 +266,6 @@ class XYZviewer(QtWidgets.QFrame):
         cam.SetViewUp(0,0,1)
         #cam.Azimuth(180)
         print(cam.GetPosition())
-        #self.renderer.SetActiveCamera(cam)
-        self.renderer.ResetCamera()
-        self.refresh_renderer()
-    def setCameraBot(self):
-        self.renderer.ResetCamera()
-        cam=self.renderer.GetActiveCamera()
-        cam.SetPosition(0,0,0)
-        cam.SetViewUp(0,1,0)
-        #cam.Azimuth(180)
         #self.renderer.SetActiveCamera(cam)
         self.renderer.ResetCamera()
         self.refresh_renderer()
@@ -426,12 +415,11 @@ class XYZviewerApp(QtWidgets.QMainWindow):
         
         self.xyzLoader.signalOut.connect(self.__GetDataFromThread)
         self.xyzLoader.signalStart.connect(self.__onStart_ProgressBar)
-        #self.xyzLoader.signalNow.connect(self.__onNow_ProgressBar)
+        self.xyzLoader.signalNow.connect(self.__onNow_ProgressBar)
         self.xyzLoader.signalOut.connect(self.__onClose_ProgressBar)
         self.showMaximized()
         self.ui.resetCam.clicked.connect(self.__onClicked_ResetCam)
         self.ui.topView.clicked.connect(self.__onClicked_ViewUp)
-        self.ui.bottomView.clicked.connect(self.__onClicked_ViewBot)
         self.ui.leftView.clicked.connect(self.__onClicked_ViewLeft)
         self.ui.rightView.clicked.connect(self.__onClicked_ViewRight)
         self.ui.applyTransform.clicked.connect(self.__onClicked_ApplyTransform)
@@ -504,7 +492,6 @@ class XYZviewerApp(QtWidgets.QMainWindow):
         self.ui.leftView.setEnabled(1)
         self.ui.rightView.setEnabled(1)
         self.ui.topView.setEnabled(1)
-        self.ui.bottomView.setEnabled(1)
         self.ui.applyTransform.setEnabled(1)
         self.ui.verticalSlider.setEnabled(1)
         self.ui.verticalSlider_2.setEnabled(1)
@@ -607,7 +594,7 @@ class XYZviewerApp(QtWidgets.QMainWindow):
             self.ply_widget.renderer.ResetCamera()
     def __onStart_ProgressBar(self,i):
         self.ui.progressBar.setVisible(1)
-        self.ui.progressBar.setRange(0,0)
+        self.ui.progressBar.setRange(0,i)
     def __onNow_ProgressBar(self,value):
         self.ui.progressBar.setValue(value)
     def __onClose_ProgressBar(self):
@@ -620,8 +607,6 @@ class XYZviewerApp(QtWidgets.QMainWindow):
         self.vtk_widget.reset_Camera()
     def __onClicked_ViewUp(self):
         self.vtk_widget.setCameraTop()
-    def __onClicked_ViewBot(self):
-        self.vtk_widget.setCameraBot()
     def __onClicked_ViewLeft(self):
         self.vtk_widget.setCameraLeft()
     def __onClicked_ViewRight(self):

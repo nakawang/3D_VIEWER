@@ -413,23 +413,7 @@
               </rect>
              </property>
              <property name="text">
-              <string>Top</string>
-             </property>
-            </widget>
-            <widget class="QPushButton" name="bottomView">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="geometry">
-              <rect>
-               <x>150</x>
-               <y>160</y>
-               <width>75</width>
-               <height>23</height>
-              </rect>
-             </property>
-             <property name="text">
-              <string>Bottom</string>
+              <string>Z Up</string>
              </property>
             </widget>
             <widget class="QPushButton" name="leftView">
@@ -445,7 +429,7 @@
               </rect>
              </property>
              <property name="text">
-              <string>Left</string>
+              <string>-</string>
              </property>
             </widget>
             <widget class="QPushButton" name="rightView">
@@ -461,7 +445,7 @@
               </rect>
              </property>
              <property name="text">
-              <string>Right</string>
+              <string>+</string>
              </property>
             </widget>
             <widget class="QTextEdit" name="thetaX">
