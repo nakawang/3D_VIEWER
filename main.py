@@ -17,6 +17,7 @@ from ExceptionHandle.exceptHandle import *
 loadPath=os.path.join(os.curdir,"1.xyz")
 
 class XYZviewer(QtWidgets.QFrame):
+    pickedPointSignal = QtCore.pyqtSignal(int)
     def __init__(self, parent, dataPath):
         super(XYZviewer,self).__init__(parent)
         self.interactor = QVTKRenderWindowInteractor(self)
@@ -90,7 +91,7 @@ class XYZviewer(QtWidgets.QFrame):
         #self.renderer=renderer
         #self.interactor=interactor
         
-        
+                
     def start(self):
         self.interactor.Start()
     def load_data(self,filename):
@@ -243,26 +244,15 @@ class XYZviewer(QtWidgets.QFrame):
     def reset_Camera(self):
         print(self.oriMatrix)
         center_x,center_y,center_z=self.mainActor.GetCenter()
-        self.renderer.ResetCamera()
         cam = self.renderer.GetActiveCamera()
-        newCam=vtk.vtkCamera()
-        newCam.DeepCopy(cam)
-        w = vtk.vtkTransform()
-        w.RotateX(0.)
-        w.RotateY(0.)
-        w.RotateZ(0.)
-        newCam.SetPosition(center_x,center_y,center_z+1)
-        newCam.SetViewUp(0,1,0)
-        self.renderer.SetActiveCamera(newCam)
-        actors = self.renderer.GetActors()
-        for actor in actors:
-            actor.SetUserTransform(w)
+        cam.SetPosition(center_x,center_y,center_z+1)
+        cam.SetViewUp(0,1,0)
         self.renderer.ResetCamera()
         self.refresh_renderer()
     def setCameraTop(self):
         center_x,center_y,center_z=self.mainActor.GetCenter()
         cam=self.renderer.GetActiveCamera()
-        cam.SetPosition(center_x-1,center_y,center_z)
+        cam.SetPosition(center_x+1,center_y,center_z)
         cam.SetViewUp(0,0,1)
         #cam.Azimuth(180)
         print(cam.GetPosition())
@@ -306,6 +296,18 @@ class XYZviewer(QtWidgets.QFrame):
         cam.SetParallelProjection(state)
         self.renderer.ResetCamera()
         self.refresh_renderer()
+    def setPickerMode(self,state):
+        import utilities.pointPicker as pStyle
+        print(pStyle)
+        print(state)
+        if state==2:
+            self.interactor.SetInteractorStyle(pStyle.testStyle(self.emitPickedPoint))
+        else:
+            self.interactor.SetInteractorStyle(vtk.vtkInteractorStyleTerrain())
+    def emitPickedPoint(self,int):
+        print("emit:",int)
+        self.pickedPointSignal.emit(int)
+        
 class loaderThread(QThread):
     signalStart = QtCore.pyqtSignal(int)
     signalNow = QtCore.pyqtSignal(int)
@@ -398,7 +400,7 @@ class XYZviewerApp(QtWidgets.QMainWindow):
         self.ui.pushButton2.setVisible(0)
         self.ui.tabWidget.setCurrentIndex(0)
         self.ui.progressBar.setVisible(0)
-        self.ui.label_2.setText("")
+        self.ui.detailView.setText("")
         #self.setWindowFlags(QtCore.Qt.WindowFullScreen)
         #self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
         
@@ -424,6 +426,8 @@ class XYZviewerApp(QtWidgets.QMainWindow):
         self.ui.rightView.clicked.connect(self.__onClicked_ViewRight)
         self.ui.applyTransform.clicked.connect(self.__onClicked_ApplyTransform)
         self.ui.isPerspective.stateChanged.connect(self.__onCheckboxStatusChanged)
+        self.ui.pointPicker.stateChanged.connect(self.__onPickerMode)
+        self.vtk_widget.pickedPointSignal.connect(self.__printPickedPoint)
     def initialize(self):
         self.vtk_widget.start()
     def tab2_setup(self):
@@ -495,7 +499,7 @@ class XYZviewerApp(QtWidgets.QMainWindow):
         self.ui.applyTransform.setEnabled(1)
         self.ui.verticalSlider.setEnabled(1)
         self.ui.verticalSlider_2.setEnabled(1)
-        print(2)
+        self.ui.pointPicker.setEnabled(1)
     def __ResetSlider(self):
         bounds=self.vtk_widget.pointCloud.getBounds()
         zMin=bounds[4]
@@ -569,8 +573,8 @@ class XYZviewerApp(QtWidgets.QMainWindow):
     def __UpdateText(self,rawInfo):
         txt = rawInfo
         w,h,x,y=str(txt[0]),str(txt[1]),str(txt[2]),str(txt[3])
-        self.ui.label_2.setFont(QtGui.QFont("Courier New",12))
-        self.ui.label_2.setText("Raw Width:"+w+"\n"+"Raw Height:"+h+"\n"+"Resolution X:"+x+"\n"+"Resolution Y:"+y+"\n")
+        self.ui.detailView.setFont(QtGui.QFont("Courier New",12))
+        self.ui.detailView.setPlainText("Raw Width:"+w+"\n"+"Raw Height:"+h+"\n"+"Resolution X:"+x+"\n"+"Resolution Y:"+y+"\n")
     def __SyncCamera(self,state):
         obs1=None
         obs2=None
@@ -619,6 +623,20 @@ class XYZviewerApp(QtWidgets.QMainWindow):
         print(thetaX,thetaY,thetaZ)
     def __onCheckboxStatusChanged(self,state):
         self.vtk_widget.setParallelCamera(state)
+    def __onPickerMode(self,state):
+        self.vtk_widget.setPickerMode(state)
+    def __printPickedPoint(self,idNo):
+        if idNo==-1:
+            txt=self.ui.detailView.toPlainText()
+            txt=txt + "Nothing picked." +"\n"
+            print(txt)
+            self.ui.detailView.setText(txt)
+            return
+        txt=self.ui.detailView.toPlainText()
+        txt=txt+"Picked point: "+str(idNo) + "\n"
+        print(txt)
+        self.ui.detailView.setText(txt)
+        self.ui.detailView.moveCursor(-1)
 def getFilePath():
     if len(sys.argv) >2:
          print('Usage: xyzviewer.py itemfile')
