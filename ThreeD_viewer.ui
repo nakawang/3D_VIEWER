@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1135</width>
-    <height>770</height>
+    <width>1920</width>
+    <height>1121</height>
    </rect>
   </property>
   <property name="font">
@@ -238,7 +238,7 @@
              </rect>
             </property>
             <property name="styleSheet">
-             <string notr="true">color:rgb(0, 0, 0)</string>
+             <string notr="true">color:rgb(170, 170, 0)</string>
             </property>
             <property name="text">
              <string>Benano</string>
@@ -271,7 +271,7 @@
              <rect>
               <x>0</x>
               <y>390</y>
-              <width>291</width>
+              <width>421</width>
               <height>231</height>
              </rect>
             </property>
@@ -288,6 +288,9 @@
              <string>Controller</string>
             </property>
             <widget class="QSlider" name="verticalSlider_2">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
              <property name="geometry">
               <rect>
                <x>30</x>
@@ -307,9 +310,12 @@
              </property>
             </widget>
             <widget class="QSlider" name="verticalSlider">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
              <property name="geometry">
               <rect>
-               <x>90</x>
+               <x>80</x>
                <y>70</y>
                <width>21</width>
                <height>151</height>
@@ -353,7 +359,7 @@
             <widget class="QLabel" name="label_8">
              <property name="geometry">
               <rect>
-               <x>70</x>
+               <x>60</x>
                <y>40</y>
                <width>61</width>
                <height>21</height>
@@ -379,9 +385,12 @@
              </property>
             </widget>
             <widget class="QPushButton" name="resetCam">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
              <property name="geometry">
               <rect>
-               <x>170</x>
+               <x>150</x>
                <y>60</y>
                <width>75</width>
                <height>23</height>
@@ -392,9 +401,12 @@
              </property>
             </widget>
             <widget class="QPushButton" name="topView">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
              <property name="geometry">
               <rect>
-               <x>170</x>
+               <x>150</x>
                <y>100</y>
                <width>75</width>
                <height>23</height>
@@ -405,9 +417,12 @@
              </property>
             </widget>
             <widget class="QPushButton" name="bottomView">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
              <property name="geometry">
               <rect>
-               <x>170</x>
+               <x>150</x>
                <y>160</y>
                <width>75</width>
                <height>23</height>
@@ -418,9 +433,12 @@
              </property>
             </widget>
             <widget class="QPushButton" name="leftView">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
              <property name="geometry">
               <rect>
-               <x>130</x>
+               <x>110</x>
                <y>130</y>
                <width>75</width>
                <height>23</height>
@@ -431,9 +449,12 @@
              </property>
             </widget>
             <widget class="QPushButton" name="rightView">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
              <property name="geometry">
               <rect>
-               <x>210</x>
+               <x>190</x>
                <y>130</y>
                <width>75</width>
                <height>23</height>
@@ -443,13 +464,168 @@
               <string>Right</string>
              </property>
             </widget>
+            <widget class="QTextEdit" name="thetaX">
+             <property name="geometry">
+              <rect>
+               <x>280</x>
+               <y>60</y>
+               <width>81</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="font">
+              <font>
+               <family>Courier New</family>
+               <pointsize>6</pointsize>
+               <weight>75</weight>
+               <bold>true</bold>
+               <underline>false</underline>
+              </font>
+             </property>
+             <property name="html">
+              <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Courier New'; font-size:6pt; font-weight:600; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;0&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+            </widget>
+            <widget class="QTextEdit" name="thetaY">
+             <property name="geometry">
+              <rect>
+               <x>280</x>
+               <y>100</y>
+               <width>81</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="font">
+              <font>
+               <family>Courier New</family>
+               <pointsize>6</pointsize>
+               <weight>75</weight>
+               <bold>true</bold>
+               <underline>false</underline>
+              </font>
+             </property>
+             <property name="html">
+              <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Courier New'; font-size:6pt; font-weight:600; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;0&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+            </widget>
+            <widget class="QTextEdit" name="thetaZ">
+             <property name="geometry">
+              <rect>
+               <x>280</x>
+               <y>140</y>
+               <width>81</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="font">
+              <font>
+               <family>Courier New</family>
+               <pointsize>6</pointsize>
+               <weight>75</weight>
+               <bold>true</bold>
+               <underline>false</underline>
+              </font>
+             </property>
+             <property name="html">
+              <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Courier New'; font-size:6pt; font-weight:600; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;0&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+            </widget>
+            <widget class="QLabel" name="label_9">
+             <property name="geometry">
+              <rect>
+               <x>290</x>
+               <y>45</y>
+               <width>61</width>
+               <height>16</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>θx</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+            <widget class="QLabel" name="label_10">
+             <property name="geometry">
+              <rect>
+               <x>290</x>
+               <y>85</y>
+               <width>61</width>
+               <height>16</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>θy</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+            <widget class="QLabel" name="label_11">
+             <property name="geometry">
+              <rect>
+               <x>290</x>
+               <y>120</y>
+               <width>61</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>θz</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+            <widget class="QPushButton" name="applyTransform">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="geometry">
+              <rect>
+               <x>280</x>
+               <y>170</y>
+               <width>81</width>
+               <height>23</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Apply</string>
+             </property>
+            </widget>
+            <widget class="QCheckBox" name="isPerspective">
+             <property name="geometry">
+              <rect>
+               <x>130</x>
+               <y>200</y>
+               <width>111</width>
+               <height>16</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Parellel View</string>
+             </property>
+            </widget>
            </widget>
            <widget class="QProgressBar" name="progressBar">
             <property name="geometry">
              <rect>
               <x>-3</x>
               <y>630</y>
-              <width>291</width>
+              <width>381</width>
               <height>23</height>
              </rect>
             </property>
@@ -727,7 +903,7 @@ border: 1px solid black;
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1135</width>
+     <width>1920</width>
      <height>21</height>
     </rect>
    </property>

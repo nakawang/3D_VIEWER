@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #from fbs_runtime.application_context.PyQt5 import ApplicationContext
-import vtk,sys,numpy,os
+import vtk,sys,numpy,os,math
 sys.path.append(os.curdir)
 from numpy import random,genfromtxt,size
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -55,6 +55,7 @@ class XYZviewer(QtWidgets.QFrame):
         #cam.Roll(90)
         cam.SetViewUp(0,0,1)
         cam.SetPosition(0,1,0)
+        cam.SetParallelProjection(0)
         #cam.Elevation(-10)
         self.renderer.SetActiveCamera(cam)
         self.renderer.ResetCamera()
@@ -123,7 +124,7 @@ class XYZviewer(QtWidgets.QFrame):
         scalarBar.SetMaximumHeightInPixels(300)
         #print(self.scalarBar.GetProperty().SetDisplayLocationToBackground())
         #self.scalarBar.SetDisplayPosition(750,250)
-        scalarBar.SetDisplayPosition(60,200)
+        scalarBar.SetDisplayPosition(60,400)
         textP = vtk.vtkTextProperty()
         textP.SetFontSize(10)
         scalarBar.SetLabelTextProperty(textP)
@@ -213,13 +214,14 @@ class XYZviewer(QtWidgets.QFrame):
         if isMesh:
             self.pointCloud.generateMesh()
             #self.renderer.AddActor(self.pointCloud.vtkActor)
-            self.renderer.AddActor(self.pointCloud.boundaryActor)
+            self.mainActor=self.pointCloud.boundaryActor
         elif isDelaunay3D:
-            self.renderer.AddActor(self.pointCloud.delaunay3D())
+            self.mainActor=self.pointCloud.delaunay3D()
         elif isSurfRecon:
-            self.renderer.AddActor(self.pointCloud.surfaceRecon())
+            self.mainActor=self.pointCloud.surfaceRecon()
         else:
-            self.renderer.AddActor(self.pointCloud.vtkActor)
+            self.mainActor=self.pointCloud.vtkActor
+        self.renderer.AddActor(self.mainActor)
         self.setCubeAxesActor()
         self.renderer.AddActor(self.cubeAxesActor)
         self.setScalarBar()
@@ -227,6 +229,8 @@ class XYZviewer(QtWidgets.QFrame):
         
         self.renderer.ResetCamera()
         self.refresh_renderer()
+        cam = self.renderer.GetActiveCamera()
+        self.oriMatrix = cam.GetExplicitProjectionTransformMatrix()
     def removeAll(self):
         actors = self.renderer.GetActors()
         #print(actors)
@@ -237,12 +241,15 @@ class XYZviewer(QtWidgets.QFrame):
             del self.pcdCollection[-1]
         #print(len(self.pcdCollection))
     def reset_Camera(self):
+        print(self.oriMatrix)
         self.renderer.ResetCamera()
-        cam=self.renderer.GetActiveCamera()
-        cam.SetViewUp(0,0,1)
-        cam.SetPosition(0,1,0)
-        cam.Azimuth(0)
-        cam.Elevation(90)
+        w = vtk.vtkTransform()
+        w.RotateX(0.)
+        w.RotateY(0.)
+        w.RotateZ(0.)
+        actors = self.renderer.GetActors()
+        for actor in actors:
+            actor.SetUserTransform(w)
         self.renderer.ResetCamera()
         self.refresh_renderer()
     def setCameraTop(self):
@@ -251,6 +258,7 @@ class XYZviewer(QtWidgets.QFrame):
         cam.SetPosition(0,0,0)
         cam.SetViewUp(0,1,0)
         cam.Azimuth(180)
+        print(cam.GetPosition())
         #self.renderer.SetActiveCamera(cam)
         self.renderer.ResetCamera()
         self.refresh_renderer()
@@ -285,9 +293,21 @@ class XYZviewer(QtWidgets.QFrame):
         #self.renderer.ResetCamera()
         renderWindow = self.interactor.GetRenderWindow()
         renderWindow.Render()
-        
-    
-            
+    def applyTransform(self,x,y,z):
+        center_x,center_y,center_z=self.mainActor.GetCenter()
+        w = vtk.vtkTransform()
+        #w.Translate(-center_x,-center_y,-center_z)
+        #vtk not auto change type from string to double
+        w.RotateX(float(x))
+        w.RotateY(float(y))
+        w.RotateZ(float(z))
+        self.mainActor.SetUserTransform(w)
+        self.refresh_renderer()
+    def setParallelCamera(self,state):
+        cam = self.renderer.GetActiveCamera()
+        cam.SetParallelProjection(state)
+        self.renderer.ResetCamera()
+        self.refresh_renderer()
 class loaderThread(QThread):
     signalStart = QtCore.pyqtSignal(int)
     signalNow = QtCore.pyqtSignal(int)
@@ -405,6 +425,8 @@ class XYZviewerApp(QtWidgets.QMainWindow):
         self.ui.bottomView.clicked.connect(self.__onClicked_ViewBot)
         self.ui.leftView.clicked.connect(self.__onClicked_ViewLeft)
         self.ui.rightView.clicked.connect(self.__onClicked_ViewRight)
+        self.ui.applyTransform.clicked.connect(self.__onClicked_ApplyTransform)
+        self.ui.isPerspective.stateChanged.connect(self.__onCheckboxStatusChanged)
     def initialize(self):
         self.vtk_widget.start()
     def tab2_setup(self):
@@ -462,9 +484,22 @@ class XYZviewerApp(QtWidgets.QMainWindow):
             path,f = QtWidgets.QFileDialog.getOpenFileName(None,"ply selector", "D:\\testcode" , "*.ply")
             if path:
                 self.ply_widget.add_newData(path)
+        if path:
+            self.__initialBtnStatus()
+            print(1)
     @pyqtSlot()
     def on_click_clear(self):
         self.vtk_widget.removeAll()
+    def __initialBtnStatus(self):
+        self.ui.resetCam.setEnabled(1)
+        self.ui.leftView.setEnabled(1)
+        self.ui.rightView.setEnabled(1)
+        self.ui.topView.setEnabled(1)
+        self.ui.bottomView.setEnabled(1)
+        self.ui.applyTransform.setEnabled(1)
+        self.ui.verticalSlider.setEnabled(1)
+        self.ui.verticalSlider_2.setEnabled(1)
+        print(2)
     def __ResetSlider(self):
         bounds=self.vtk_widget.pointCloud.getBounds()
         zMin=bounds[4]
@@ -582,6 +617,14 @@ class XYZviewerApp(QtWidgets.QMainWindow):
         self.vtk_widget.setCameraLeft()
     def __onClicked_ViewRight(self):
         self.vtk_widget.setCameraRight()
+    def __onClicked_ApplyTransform(self):
+        thetaX=self.ui.thetaX.toPlainText()
+        thetaY=self.ui.thetaY.toPlainText()
+        thetaZ=self.ui.thetaZ.toPlainText()
+        self.vtk_widget.applyTransform(thetaX,thetaY,thetaZ)
+        print(thetaX,thetaY,thetaZ)
+    def __onCheckboxStatusChanged(self,state):
+        self.vtk_widget.setParallelCamera(state)
 def getFilePath():
     if len(sys.argv) >2:
          print('Usage: xyzviewer.py itemfile')
