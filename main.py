@@ -28,6 +28,7 @@ class XYZviewer(QtWidgets.QFrame):
         self.pointCloud = VtkPointCloud()
         self.pcdCollection=[]
         self.actors = []
+        self.pickedID=[]
         self.e=ErrorObserver()
         #self.AddObserver("ErrorEvent",e)
         if self.e.ErrorOccurred():
@@ -305,7 +306,9 @@ class XYZviewer(QtWidgets.QFrame):
         else:
             self.interactor.SetInteractorStyle(vtk.vtkInteractorStyleTerrain())
     def emitPickedPoint(self,int):
-        print("emit:",int)
+        self.pickedID.append(int)
+        x,y,z=self.pointCloud.vtkPoints.GetPoint(int)
+        print("emit:",int,x,y,z)
         self.pickedPointSignal.emit(int)
         
 class loaderThread(QThread):
@@ -419,6 +422,7 @@ class XYZviewerApp(QtWidgets.QMainWindow):
         self.xyzLoader.signalStart.connect(self.__onStart_ProgressBar)
         self.xyzLoader.signalNow.connect(self.__onNow_ProgressBar)
         self.xyzLoader.signalOut.connect(self.__onClose_ProgressBar)
+        self.xyzLoader.signalOut.connect(self.__initialBtnStatus)
         self.showMaximized()
         self.ui.resetCam.clicked.connect(self.__onClicked_ResetCam)
         self.ui.topView.clicked.connect(self.__onClicked_ViewUp)
@@ -485,9 +489,6 @@ class XYZviewerApp(QtWidgets.QMainWindow):
             path,f = QtWidgets.QFileDialog.getOpenFileName(None,"ply selector", "D:\\testcode" , "*.ply")
             if path:
                 self.ply_widget.add_newData(path)
-        if path:
-            self.__initialBtnStatus()
-            print(1)
     @pyqtSlot()
     def on_click_clear(self):
         self.vtk_widget.removeAll()
@@ -629,14 +630,22 @@ class XYZviewerApp(QtWidgets.QMainWindow):
         if idNo==-1:
             txt=self.ui.detailView.toPlainText()
             txt=txt + "Nothing picked." +"\n"
+            self.ui.detailView.setText(txt)
+            print(txt)
+            cursor = self.ui.detailView.textCursor()
+            print(1)
+            cursor.movePosition(11)
+            print(1)
+            #cursor.setPosition(pos-1)
+            self.ui.detailView.setTextCursor(cursor)
+        else:
+            txt=self.ui.detailView.toPlainText()
+            txt=txt+"Picked point: "+str(idNo) + "\n"
             print(txt)
             self.ui.detailView.setText(txt)
-            return
-        txt=self.ui.detailView.toPlainText()
-        txt=txt+"Picked point: "+str(idNo) + "\n"
-        print(txt)
-        self.ui.detailView.setText(txt)
-        self.ui.detailView.moveCursor(-1)
+            cursor = self.ui.detailView.textCursor()
+            cursor.movePosition(11)
+            self.ui.detailView.setTextCursor(cursor)
 def getFilePath():
     if len(sys.argv) >2:
          print('Usage: xyzviewer.py itemfile')

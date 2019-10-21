@@ -672,11 +672,26 @@ p, li { white-space: pre-wrap; }
                   <verstretch>0</verstretch>
                  </sizepolicy>
                 </property>
+                <property name="tabletTracking">
+                 <bool>true</bool>
+                </property>
+                <property name="focusPolicy">
+                 <enum>Qt::WheelFocus</enum>
+                </property>
                 <property name="acceptDrops">
                  <bool>false</bool>
                 </property>
+                <property name="autoFillBackground">
+                 <bool>true</bool>
+                </property>
                 <property name="horizontalScrollBarPolicy">
                  <enum>Qt::ScrollBarAsNeeded</enum>
+                </property>
+                <property name="autoFormatting">
+                 <set>QTextEdit::AutoAll</set>
+                </property>
+                <property name="tabChangesFocus">
+                 <bool>true</bool>
                 </property>
                 <property name="readOnly">
                  <bool>true</bool>
