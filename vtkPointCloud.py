@@ -93,8 +93,14 @@ class VtkPointCloud:
         triangulation.GetProperty().SetColor(1,0,0)
         return triangulation
     def surfaceRecon(self):
+        pointSource=vtk.vtkProgrammableSource()
+        def readPoints():
+            output = pointSource.GetPolyDataOutput()
+            #points = vtk.vtkPoints()
+            output.SetPoints(self.vtkPoints)
+        pointSource.SetExecuteMethod(readPoints)
         surf = vtk.vtkSurfaceReconstructionFilter()
-        surf.SetInputData(self.vtkPolyData)
+        surf.SetInputConnection(pointSource.GetOutputPort())
         print(surf)
         contour = vtk.vtkContourFilter()
         contour.SetInputConnection(surf.GetOutputPort())

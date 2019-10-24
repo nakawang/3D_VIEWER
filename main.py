@@ -30,7 +30,7 @@ class XYZviewer(QtWidgets.QFrame):
         self.actors = []
         self.pickedID=[]
         self.e=ErrorObserver()
-        #self.AddObserver("ErrorEvent",e)
+        self.interactor.AddObserver("ErrorEvent",self.e)
         if self.e.ErrorOccurred():
             print(e.ErrorMessage)
         #self.load_data(loadPath)
@@ -212,7 +212,7 @@ class XYZviewer(QtWidgets.QFrame):
         self.removeAll()
         isMesh = False
         isDelaunay3D=False
-        isSurfRecon=False
+        isSurfRecon=1
         if isMesh:
             self.pointCloud.generateMesh()
             #self.renderer.AddActor(self.pointCloud.vtkActor)
@@ -310,7 +310,87 @@ class XYZviewer(QtWidgets.QFrame):
         x,y,z=self.pointCloud.vtkPoints.GetPoint(int)
         print("emit:",int,x,y,z)
         self.pickedPointSignal.emit(int)
-        
+        sphereSource = vtk.vtkSphereSource()
+        sphereSource.SetCenter(x,y,z)
+        sphereSource.SetRadius(1)
+        sphereSource.SetThetaResolution(10)
+        mapper = vtk.vtkPolyDataMapper()
+        mapper.SetInputConnection(sphereSource.GetOutputPort())
+        actor = vtk.vtkActor()
+        actor.SetMapper(mapper)
+        actor.GetProperty().SetColor(1,0,0)
+        #actor.GetProperty().SetRepresentationToWireframe()
+        print(actor)
+        actors = self.renderer.GetActors()
+        print(actors)
+        self.renderer.AddActor(actor)
+        self.refresh_renderer()
+        if len(self.pickedID)>3:
+            self.drawKochanekSpline(self.pickedID)
+    def drawParametricSpline(self,IDList):
+        points = vtk.vtkPoints()
+        for i in IDList:
+            p=self.pointCloud.vtkPoints.GetPoint(i)
+            points.InsertNextPoint(p)
+        spline = vtk.vtkParametricSpline()
+        spline.SetPoints(points)
+        functionSource = vtk.vtkParametricFunctionSource()
+        functionSource.SetParametricFunction(spline)
+        functionSource.Update()
+        mapper = vtk.vtkPolyDataMapper()
+        mapper.SetInputConnection(functionSource.GetOutputPort())
+        actor = vtk.vtkActor()
+        actor.SetMapper(mapper)
+        self.renderer.AddActor(actor)
+        self.refresh_renderer()
+    def drawKochanekSpline(self,IDList):
+        points = vtk.vtkPoints()
+        for i in IDList:
+            p=self.pointCloud.vtkPoints.GetPoint(i)
+            points.InsertNextPoint(p)
+        xSpline = vtk.vtkKochanekSpline()
+        ySpline = vtk.vtkKochanekSpline()
+        zSpline = vtk.vtkKochanekSpline()
+        spline = vtk.vtkParametricSpline()
+        spline.SetXSpline(xSpline)
+        spline.SetYSpline(ySpline)
+        spline.SetZSpline(zSpline)
+        spline.SetPoints(points)
+        functionSource = vtk.vtkParametricFunctionSource()
+        functionSource.SetParametricFunction(spline)
+        functionSource.Update()
+        mapper = vtk.vtkPolyDataMapper()
+        mapper.SetInputConnection(functionSource.GetOutputPort())
+        actor = vtk.vtkActor()
+        actor.SetMapper(mapper)
+        self.renderer.AddActor(actor)
+        self.refresh_renderer()
+    def SurfaceReconstruction(self):
+        pointSource=vtk.vtkProgrammableSource()
+        def readPoints():
+            output = pointSource.GetPolyDataOutput()
+            points = vtk.vtkPoints()
+            output.SetPoints(points)
+            for i in IDList:
+                p=self.pointCloud.vtkPoints.GetPoint(i)
+                points.InsertNextPoint(p)
+        pointSource.SetExecuteMethod(readPoints)
+        surf = vtk.vtkSurfaceReconstructionFilter()
+        surf.SetInputConnection(pointSource.GetOutputPort())
+        cf = vtk.vtkContourFilter()
+        cf.SetInputConnection(surf.GetOutputPort())
+        cf.SetValue(0,0)
+        mapper = vtk.vtkPolyDataMapper()
+        mapper.SetInputConnection(cf.GetOutputPort())
+        mapper.ScalarVisibilityOff()
+        actor = vtk.vtkActor()
+        actor.SetMapper(mapper)
+        actor.GetProperty().SetDiffuseColor(1,0.3882,0.2784)
+        actor.GetProperty().SetSpecularColor(1,1,1)
+        actor.GetProperty().SetSpecular(.4)
+        actor.GetProperty().SetSpecularPower(50)
+        self.renderer.AddActor(actor)
+        self.refresh_renderer()
 class loaderThread(QThread):
     signalStart = QtCore.pyqtSignal(int)
     signalNow = QtCore.pyqtSignal(int)
