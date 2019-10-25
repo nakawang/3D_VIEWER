@@ -50,10 +50,10 @@ class rawLoader:
         realX = np_x * (self.__RESX)/1000
         realY = np_y * (self.__RESY)/1000
         xyz[:,0]=realX
-        xyz[:,1]=realY
+        xyz[:,1]=realY*-1
         xyz[:,2]=self.__HEIGHTRAWVALUE
         self.__XYZ = xyz[np.all(xyz >-99998,axis=1)]
-        self.outputXYZ("d:\\TestCode\\metalCenter\\test.xyz")
+        #self.outputXYZ("d:\\TestCode\\metalCenter\\test.xyz")
         return self.__XYZ
     def outputXYZ(self,dest):
         pcd = o3d.geometry.PointCloud()

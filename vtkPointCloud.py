@@ -1,4 +1,5 @@
 import vtk,sys
+import numpy as np
 from numpy import random
 class VtkPointCloud:
     def __init__(self, zMin=-100.0, zMax=100.0, maxNumPoints=5e7):
@@ -35,6 +36,18 @@ class VtkPointCloud:
         self.vtkCells.Modified()
         self.vtkPoints.Modified()
         self.vtkDepth.Modified()
+    def setPoints(self,a,b,c,d):
+        print("1")
+        #self.vtkPolyData.SetPoints(vtkVerts)
+        print("1")
+        #self.vtkPolyData.SetVerts(vtkCellArray)
+        print("1")
+        self.vtkPoints.SetData(a)
+        self.vtkCells.SetCells(b,c)
+        self.vtkCells.Modified()
+        self.vtkPoints.Modified()
+        print("1")
+        self.vtkPolyData.GetPointData().SetScalars(d)
     def clearPoints(self):
         self.vtkPoints = vtk.vtkPoints()
         self.vtkCells = vtk.vtkCellArray()

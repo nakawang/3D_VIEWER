@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
 #from fbs_runtime.application_context.PyQt5 import ApplicationContext
-import vtk,sys,numpy,os,math
+import vtk,sys,numpy,os,math,glob
+import pandas as pd
 sys.path.append(os.curdir)
-from numpy import random,genfromtxt,size
+from numpy import loadtxt,size
 from PyQt5 import QtCore, QtGui, QtWidgets
 from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
-from PyQt5.QtCore import pyqtSlot, QThread
+from PyQt5.QtCore import pyqtSlot, QThread, QTimer
 from vtkPointCloud import VtkPointCloud
 from rawLoader import rawLoader
 from pcdViewer import PCDviewer
 from plyViewer import PLYviewer
+from vtk.util import numpy_support
 import open3d as o3d
 import subprocess
 from ExceptionHandle.exceptHandle import *
@@ -17,7 +19,7 @@ from ExceptionHandle.exceptHandle import *
 loadPath=os.path.join(os.curdir,"1.xyz")
 
 class XYZviewer(QtWidgets.QFrame):
-    pickedPointSignal = QtCore.pyqtSignal(int)
+    pickedPointSignal = QtCore.pyqtSignal(str)
     def __init__(self, parent, dataPath):
         super(XYZviewer,self).__init__(parent)
         self.interactor = QVTKRenderWindowInteractor(self)
@@ -212,7 +214,7 @@ class XYZviewer(QtWidgets.QFrame):
         self.removeAll()
         isMesh = False
         isDelaunay3D=False
-        isSurfRecon=1
+        isSurfRecon=False
         if isMesh:
             self.pointCloud.generateMesh()
             #self.renderer.AddActor(self.pointCloud.vtkActor)
@@ -223,6 +225,7 @@ class XYZviewer(QtWidgets.QFrame):
             self.mainActor=self.pointCloud.surfaceRecon()
         else:
             self.mainActor=self.pointCloud.vtkActor
+            print(self.pointCloud)
         self.renderer.AddActor(self.mainActor)
         self.setCubeAxesActor()
         self.renderer.AddActor(self.cubeAxesActor)
@@ -246,8 +249,8 @@ class XYZviewer(QtWidgets.QFrame):
         print(self.oriMatrix)
         center_x,center_y,center_z=self.mainActor.GetCenter()
         cam = self.renderer.GetActiveCamera()
-        cam.SetPosition(center_x,center_y,center_z+1)
-        cam.SetViewUp(0,1,0)
+        cam.SetPosition(center_x,center_y,center_z+100)
+        cam.SetViewUp(0,-1,0)
         self.renderer.ResetCamera()
         self.refresh_renderer()
     def setCameraTop(self):
@@ -305,11 +308,15 @@ class XYZviewer(QtWidgets.QFrame):
             self.interactor.SetInteractorStyle(pStyle.testStyle(self.emitPickedPoint))
         else:
             self.interactor.SetInteractorStyle(vtk.vtkInteractorStyleTerrain())
-    def emitPickedPoint(self,int):
-        self.pickedID.append(int)
-        x,y,z=self.pointCloud.vtkPoints.GetPoint(int)
-        print("emit:",int,x,y,z)
-        self.pickedPointSignal.emit(int)
+    def emitPickedPoint(self,pointId):
+        self.pickedID.append(pointId)
+        x,y,z=self.pointCloud.vtkPoints.GetPoint(pointId)
+        print("emit:",pointId,x,y,z)
+        px = "{:.3f}".format(x)
+        py = "{:.3f}".format(y)
+        pz = "{:.3f}".format(z)
+        txt = "Picked:"+px+","+py+","+pz
+        self.pickedPointSignal.emit(txt)
         sphereSource = vtk.vtkSphereSource()
         sphereSource.SetCenter(x,y,z)
         sphereSource.SetRadius(1)
@@ -391,6 +398,9 @@ class XYZviewer(QtWidgets.QFrame):
         actor.GetProperty().SetSpecularPower(50)
         self.renderer.AddActor(actor)
         self.refresh_renderer()
+
+        
+
 class loaderThread(QThread):
     signalStart = QtCore.pyqtSignal(int)
     signalNow = QtCore.pyqtSignal(int)
@@ -401,61 +411,86 @@ class loaderThread(QThread):
         self.pcd = None
         self.rawInfo=None
         self.isWorking=False
+        
     def setFileName(self,fileName):
         self.fileName = fileName
     def __getPointCloud(self):
-        
-        xyz = genfromtxt(self.fileName,dtype=float,usecols=[0,1,2])
+        self.signalStart.emit(0)
+        print("b")
+        xyz = pd.read_csv(self.fileName,header=None,delimiter="\t",dtype=float,usecols=[0,1,2])
+        xyz = xyz.values
+        print(xyz)
+        #xyz = loadtxt(self.fileName,dtype=float,usecols=[0,1,2])
         minH=xyz[:,2].min()
         maxH=xyz[:,2].max()
         count = len(xyz)
-        print(count)
+        print(len(xyz.shape))
         pcd=VtkPointCloud(minH,maxH,count)
         pcd.clearPoints()
         counter=size(xyz,0)
         print(counter)
-        self.signalStart.emit(counter)
-        print("b")
+        #test np to vtk array
+        nCoords = xyz.shape[0]
+        nElem = xyz.shape[1]
+        print("c,e",nCoords,nElem)
+        print("xyz",xyz)
+        depth = xyz[:,2]
+        print("depth",depth)
+        vtkDepth = numpy_support.numpy_to_vtk(depth)
+        cells_npy = numpy.vstack([numpy.ones(nCoords,dtype=numpy.int64),
+                               numpy.arange(nCoords,dtype=numpy.int64)]).T.flatten()
+        print("cells_npy",cells_npy)
+        cells = vtk.vtkCellArray()
+        cells.SetCells(nCoords,numpy_support.numpy_to_vtkIdTypeArray(cells_npy))
+        print("cells",cells)
+        vtkArray=numpy_support.numpy_to_vtk(xyz)
+        verts = vtk.vtkPoints()
+        verts.SetData(vtkArray)
+        print(vtkArray)
+        pcd.setPoints(vtkArray,nCoords,numpy_support.numpy_to_vtkIdTypeArray(cells_npy),vtkDepth)
+        
+        '''
         for k in range(size(xyz,0)):
             self.signalNow.emit(k)
             point = xyz[k]
             pcd.addPoint(point)
+        '''
         self.pcd = pcd
         print("b")
     def __getRawToPointCloud(self):
+        self.signalStart.emit(counter)
         rLoader=rawLoader()
         rLoader.setRawPath(self.fileName)
         z = rLoader.getHEIGHTRAWVALUE()
         z = z[(z>-99999)]
         zMax = numpy.amax(z)
         zMin = numpy.amin(z)
-        #print("get raw:",zMin,zMax)
+        print("get raw:",zMin,zMax)
         count = rLoader.getWIDTH()*rLoader.getHEIGHT()
         pcd = VtkPointCloud(zMin,zMax,count)
         pcd.clearPoints()
         xyz = rLoader.rawToXYZ()
         counter = size(xyz,0)
-        self.signalStart.emit(counter)
-        
         for i in range(size(xyz,0)):
-            self.signalNow.emit(i)
             point = xyz[i]
             pcd.addPoint(point)
+            self.signalNow.emit(i)
         self.rawInfo=[rLoader.getWIDTH(),rLoader.getHEIGHT(),rLoader.getRESX(),rLoader.getRESY(),rLoader.getCHANNEL()]
         self.pcd = pcd
     def run(self):
-        if "xyz" in self.fileName:
+        if ".xyz" in self.fileName:
             print("filename is",self.fileName)
             self.__getPointCloud()
             self.signalOut.emit()
             print("b")
-        elif "raw" in self.fileName:
+        elif ".raw" in self.fileName:
             self.__getRawToPointCloud()
             self.signalOut.emit()
         else:
             return False
     def __del__(self):
         print("loader Thread deleted")
+        self.wait()
         
 class XYZviewerApp(QtWidgets.QMainWindow):
     def __init__(self, dataPath):
@@ -463,9 +498,10 @@ class XYZviewerApp(QtWidgets.QMainWindow):
         self.vtk_widget = None
         self.ui = None
         self.dataPath = dataPath
-        self.xyzLoader = loaderThread()
         self.setup(self.dataPath)
-        
+        #self.autoLoader = monitorData()
+        self.isLoading=False
+        self.monitorFolder=None
     def setup(self,dataPath):
         import ThreeD_viewer
         self.ui = ThreeD_viewer.Ui_MainWindow()
@@ -478,15 +514,18 @@ class XYZviewerApp(QtWidgets.QMainWindow):
         self.ui.toolButton2.setToolTip("Select xyz file")
         self.ui.toolButton2.clicked.connect(self.on_click)
         self.ui.toolButton1.clicked.connect(self.on_click)
+        self.ui.toolButton.clicked.connect(self.on_click)
         self.ui.BtnClear.clicked.connect(self.on_click_clear)
         self.ui.BtnClear.setVisible(0)
         self.ui.pushButton2.setVisible(0)
         self.ui.tabWidget.setCurrentIndex(0)
         self.ui.progressBar.setVisible(0)
         self.ui.detailView.setText("")
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.monitorData)
         #self.setWindowFlags(QtCore.Qt.WindowFullScreen)
         #self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
-        
+        self.xyzLoader = loaderThread()
         self.tab2_setup()
         
         #logo=QtGui.QPixmap(".\\benano.png")
@@ -497,10 +536,11 @@ class XYZviewerApp(QtWidgets.QMainWindow):
         self.ui.verticalSlider.valueChanged.connect(self.__on_valueChanged)
         self.ui.verticalSlider_2.valueChanged.connect(self.__on_valueChanged)
         self.ui.label_6.setFont(QtGui.QFont("Courier New",40))
-        
+        self.ui.label_2.setText("")
+        self.ui.label_2.setFont(QtGui.QFont("Courier New",8))
         self.xyzLoader.signalOut.connect(self.__GetDataFromThread)
         self.xyzLoader.signalStart.connect(self.__onStart_ProgressBar)
-        self.xyzLoader.signalNow.connect(self.__onNow_ProgressBar)
+        #self.xyzLoader.signalNow.connect(self.__onNow_ProgressBar)
         self.xyzLoader.signalOut.connect(self.__onClose_ProgressBar)
         self.xyzLoader.signalOut.connect(self.__initialBtnStatus)
         self.showMaximized()
@@ -512,6 +552,7 @@ class XYZviewerApp(QtWidgets.QMainWindow):
         self.ui.isPerspective.stateChanged.connect(self.__onCheckboxStatusChanged)
         self.ui.pointPicker.stateChanged.connect(self.__onPickerMode)
         self.vtk_widget.pickedPointSignal.connect(self.__printPickedPoint)
+        self.ui.autoLoading.stateChanged.connect(self.__onAutoLoading)
     def initialize(self):
         self.vtk_widget.start()
     def tab2_setup(self):
@@ -543,7 +584,7 @@ class XYZviewerApp(QtWidgets.QMainWindow):
         toolName = self.sender().objectName()
         
         if toolName == "toolButton2":
-            path,f = QtWidgets.QFileDialog.getOpenFileName(None,"xyz selector", sys.argv[0] , "*.xyz")
+            path,f = QtWidgets.QFileDialog.getOpenFileName(None,"xyz selector", "D:\\" , "*.xyz")
             if path:
                 self.dataPath = path
                 self.refreshViewer()
@@ -569,6 +610,14 @@ class XYZviewerApp(QtWidgets.QMainWindow):
             path,f = QtWidgets.QFileDialog.getOpenFileName(None,"ply selector", "D:\\testcode" , "*.ply")
             if path:
                 self.ply_widget.add_newData(path)
+        elif toolName == "toolButton":
+            fd = QtWidgets.QFileDialog()
+            fd.setFileMode(4)
+            path= fd.getExistingDirectory()
+            if path:
+                self.ui.label_2.setText(path)
+                self.__printPickedPoint(path)
+                self.monitorFolder=path
     @pyqtSlot()
     def on_click_clear(self):
         self.vtk_widget.removeAll()
@@ -621,9 +670,8 @@ class XYZviewerApp(QtWidgets.QMainWindow):
     def addPLYData(self):
         self.ply_widget.add_newData()
     def refreshViewer(self):
-        print("1")
-        print(self.dataPath)
         self.xyzLoader.setFileName(self.dataPath)
+        print(self.dataPath)
         self.xyzLoader.start()
     def plytomesh(self):
         bType="2"
@@ -679,11 +727,13 @@ class XYZviewerApp(QtWidgets.QMainWindow):
             self.ply_widget.renderer.ResetCamera()
     def __onStart_ProgressBar(self,i):
         self.ui.progressBar.setVisible(1)
-        self.ui.progressBar.setRange(0,i)
+        self.ui.progressBar.setRange(0,0)
+        self.isLoading=True
     def __onNow_ProgressBar(self,value):
         self.ui.progressBar.setValue(value)
     def __onClose_ProgressBar(self):
         self.ui.progressBar.setVisible(0)
+        self.isLoading=False
     def modifiedCallback(self,obj,ev):
         self.ply_widget.interactor.GetRenderWindow().Render()
         self.pcd_widget.interactor.GetRenderWindow().Render()
@@ -707,25 +757,58 @@ class XYZviewerApp(QtWidgets.QMainWindow):
     def __onPickerMode(self,state):
         self.vtk_widget.setPickerMode(state)
     def __printPickedPoint(self,idNo):
-        if idNo==-1:
-            txt=self.ui.detailView.toPlainText()
-            txt=txt + "Nothing picked." +"\n"
-            self.ui.detailView.setText(txt)
-            print(txt)
-            cursor = self.ui.detailView.textCursor()
-            print(1)
-            cursor.movePosition(11)
-            print(1)
-            #cursor.setPosition(pos-1)
-            self.ui.detailView.setTextCursor(cursor)
+        txt=self.ui.detailView.toPlainText()
+        txt=txt+idNo+"\n"
+        print(idNo)
+        self.ui.detailView.setText(txt)
+        cursor = self.ui.detailView.textCursor()
+        cursor.movePosition(11)
+        self.ui.detailView.setTextCursor(cursor)
+    def __onAutoLoading(self,state):
+        #Watching new file generation
+        print("auto loader state: ", state)
+        if state==2:
+            self.timer.start(1500)
+            print("start auto loading")
         else:
-            txt=self.ui.detailView.toPlainText()
-            txt=txt+"Picked point: "+str(idNo) + "\n"
-            print(txt)
-            self.ui.detailView.setText(txt)
-            cursor = self.ui.detailView.textCursor()
-            cursor.movePosition(11)
-            self.ui.detailView.setTextCursor(cursor)
+            self.timer.stop()
+        return
+    def monitorData(self):
+        try:
+            if self.isLoading:
+                print("still loading")
+                return
+            path=self.monitorFolder
+            print("start check file")
+            if path==None:
+                print("check path exists")
+                self.__printPickedPoint("Please set a monitor folder.")
+                self.__printPickedPoint("Stop monitor.")
+                self.ui.autoLoading.setChecked(False)
+                return
+            path=path+"/*.xyz"
+            files=glob.glob(path)
+            print("check file counts",len(files))
+            if len(files)<1:
+                print("file count zero")
+                return 
+            latest_file=max(files,key=os.path.getmtime)
+            print("check last file name",latest_file)
+            print(files)
+            if self.dataPath != latest_file:
+                self.isLoading=True
+                print("start load:",latest_file)
+                txt="Load file: "+latest_file
+                self.__printPickedPoint(txt)
+                self.dataPath=latest_file
+                self.refreshViewer()
+            print("wait next check")
+        except:
+            print("crash")
+    def closeEvent(self,event):
+        print("app closed")
+        self.timer.stop()
+        self.xyzLoader.exit()
 def getFilePath():
     if len(sys.argv) >2:
          print('Usage: xyzviewer.py itemfile')
@@ -745,6 +828,7 @@ if __name__ == '__main__':
     with file:
         qss=file.read()
         app.setStyleSheet(qss)
+    file.close()
     main_window = XYZviewerApp(None)
     main_window.initialize()
     main_window.show()
