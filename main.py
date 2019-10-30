@@ -411,13 +411,13 @@ class loaderThread(QThread):
         self.pcd = None
         self.rawInfo=None
         self.isWorking=False
-        
+        #self.qMutex=QMutexLocker()
     def setFileName(self,fileName):
         self.fileName = fileName
     def __getPointCloud(self):
         self.signalStart.emit(0)
         print("b")
-        xyz = pd.read_csv(self.fileName,header=None,delimiter="\t",dtype=float,usecols=[0,1,2])
+        xyz = pd.read_csv(self.fileName,header=None,delim_whitespace=True,dtype=float,usecols=[0,1,2])
         xyz = xyz.values
         print(xyz)
         #xyz = loadtxt(self.fileName,dtype=float,usecols=[0,1,2])
@@ -478,15 +478,19 @@ class loaderThread(QThread):
         self.rawInfo=[rLoader.getWIDTH(),rLoader.getHEIGHT(),rLoader.getRESX(),rLoader.getRESY(),rLoader.getCHANNEL()]
         self.pcd = pcd
     def run(self):
-        if ".xyz" in self.fileName:
-            print("filename is",self.fileName)
-            self.__getPointCloud()
-            self.signalOut.emit()
-            print("b")
-        elif ".raw" in self.fileName:
-            self.__getRawToPointCloud()
-            self.signalOut.emit()
-        else:
+        try:
+            if ".xyz" in self.fileName:
+                print("filename is",self.fileName)
+                self.__getPointCloud()
+                self.signalOut.emit()
+                print("b")
+            elif ".raw" in self.fileName:
+                self.__getRawToPointCloud()
+                self.signalOut.emit()
+            else:
+                return False
+        except:
+            print("something wrong")
             return False
     def __del__(self):
         print("loader Thread deleted")
@@ -660,7 +664,11 @@ class XYZviewerApp(QtWidgets.QMainWindow):
         #self.vtk_widget.reset_Camera()
         self.vtk_widget.refresh_renderer()
     def __GetDataFromThread(self):
-        pcd = self.xyzLoader.pcd
+        if self.xyzLoader.isFinished():
+            pcd = self.xyzLoader.pcd
+        else:
+            print("not finished.")
+            return
         self.vtk_widget.add_newData(pcd)
         self.__ResetSlider()
         if "raw" in self.xyzLoader.fileName:
