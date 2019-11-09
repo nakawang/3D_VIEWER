@@ -1,6 +1,7 @@
 import vtk,sys
 import numpy as np
 from numpy import random
+from vtk.util import numpy_support
 class VtkPointCloud:
     def __init__(self, zMin=-100.0, zMax=100.0, maxNumPoints=5e7):
         self.maxNumPoints = maxNumPoints
@@ -9,8 +10,10 @@ class VtkPointCloud:
         mapper = vtk.vtkPolyDataMapper()
         mapper.SetInputData(self.vtkPolyData)
         mapper.SetColorModeToDefault()
+        #mapper.SetColorModeToDirectScalars()
         mapper.SetScalarRange(zMin, zMax)
         mapper.SetScalarVisibility(1)
+        
         lut = vtk.vtkLookupTable()
         lut.SetHueRange(0.667,0)
         #lut.SetTableRange(0,1)
@@ -21,6 +24,7 @@ class VtkPointCloud:
         lut.Build()
         mapper.SetLookupTable(lut)
         mapper.SetUseLookupTableScalarRange(True)
+        self.mapper=mapper
         self.vtkActor = vtk.vtkActor()
         self.vtkActor.SetMapper(mapper)
         self.lut = lut
@@ -59,6 +63,9 @@ class VtkPointCloud:
         self.vtkPolyData.GetPointData().SetActiveScalars('DepthArray')
     def getBounds(self):
         return self.vtkPoints.GetBounds()
+    def setRGBColor(self,colorArr):
+        self.vtkPolyData.GetPointData().SetScalars(colorArr)
+        print("Set color: ",colorArr)
     def getLUT(self):
         return self.lut
     def setLUTRange(self,min,max):
@@ -131,3 +138,34 @@ class VtkPointCloud:
         contourActor.SetMapper(contourMapper)
         print(contourActor)
         return contourActor
+    def setRTFilter(self,rt):
+        print("ori:",self.vtkPolyData)
+        if 0:
+            rt=vtk.vtkTransform()
+            rt.RotateX(90)
+            rt.RotateY(5)
+        rtFilter=vtk.vtkTransformPolyDataFilter()
+        rtFilter.SetInputData(self.vtkPolyData)
+        rtFilter.SetTransform(rt)
+        rtFilter.Update()
+        #self.mapper.SetInputConnection(rtFilter.GetOutputPort())
+        self.vtkPolyData=rtFilter.GetOutput()
+        
+        print("abc:",self.vtkPolyData)
+        points=self.vtkPolyData.GetPoints()
+        print("new data points:",points,points.GetNumberOfPoints())
+        #for i in range(points.GetNumberOfPoints()):
+            #print(points.GetPoint(i))
+        print(self.vtkPolyData.GetPointData().GetArray(0))
+        #x=points.GetNumberOfPoints()+1
+        #self.vtkPolyData.GetPointData().GetArray(0)
+        #get numpy array of vtk array
+        np_points=numpy_support.vtk_to_numpy(points.GetData())
+        depth = np_points[:,2]
+        print(np_points)
+        print("new depth",depth)
+        self.vtkPoints=points
+        self.vtkDepth = numpy_support.numpy_to_vtk(depth)
+        self.vtkPolyData.GetPointData().SetScalars(self.vtkDepth)
+        self.mapper.SetInputData(self.vtkPolyData)
+        print("rt done")
