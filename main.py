@@ -279,7 +279,7 @@ class XYZviewer(QtWidgets.QFrame):
     def setCameraTop(self):
         center_x,center_y,center_z=self.mainActor.GetCenter()
         cam=self.renderer.GetActiveCamera()
-        cam.SetPosition(center_x+1,center_y,center_z)
+        cam.SetPosition(center_x+100,center_y,center_z)
         cam.SetViewUp(0,0,1)
         cam.Azimuth(90)
         print(cam.GetPosition())
@@ -696,6 +696,8 @@ class XYZviewerApp(QtWidgets.QMainWindow):
         #self.ui.label_6.show()
         self.ui.verticalSlider.valueChanged.connect(self.__on_valueChanged)
         self.ui.verticalSlider_2.valueChanged.connect(self.__on_valueChanged)
+        self.ui.verticalSlider.sliderReleased.connect(self.__on_sliderReleased)
+        self.ui.verticalSlider_2.sliderReleased.connect(self.__on_sliderReleased)
         self.ui.label_6.setFont(QtGui.QFont("Courier New",40))
         self.ui.label_2.setText("")
         self.ui.label_2.setFont(QtGui.QFont("Courier New",8))
@@ -721,7 +723,8 @@ class XYZviewerApp(QtWidgets.QMainWindow):
         self.ui.toolButton_3.clicked.connect(self.__onClicked_ApplymXTransform)
         self.ui.toolButton_7.clicked.connect(self.__onClicked_ApplymYTransform)
         self.ui.toolButton_9.clicked.connect(self.__onClicked_ApplymZTransform)
-
+        self.ui.maxEdit.editingFinished.connect(self.__onTextChanged)
+        self.ui.minEdit.editingFinished.connect(self.__onTextChanged)
     def initialize(self):
         self.vtk_widget.start()
     def tab2_setup(self):
@@ -766,6 +769,7 @@ class XYZviewerApp(QtWidgets.QMainWindow):
             path,f = QtWidgets.QFileDialog.getOpenFileName(None,"pointcloud selector", "D:\\testcode" , "(*.xyz);;(*.ply)")
             if path:
                 if f=="(*.ply)":
+                    print("start load ply")
                     ply=o3d.io.read_point_cloud(path)
                     o3d.io.write_point_cloud("temp.xyz",ply)
                     self.pcd_widget.add_newData("temp.xyz")
@@ -776,6 +780,7 @@ class XYZviewerApp(QtWidgets.QMainWindow):
                 else:
                     self.pcd_widget.add_newData(path)
         elif toolName == "toolButton1_3":
+            print("start load ply")
             path,f = QtWidgets.QFileDialog.getOpenFileName(None,"ply selector", "D:\\testcode" , "*.ply")
             if path:
                 self.ply_widget.add_newData(path)
@@ -812,21 +817,52 @@ class XYZviewerApp(QtWidgets.QMainWindow):
             sliderMax = 100
         self.ui.verticalSlider_2.setValue(100)
         self.ui.verticalSlider.setValue(0)
+        print("zMax,zMin",zMax,zMin)
+        tMin = "{0:.3f}".format(zMin)
+        tMax = "{0:.3f}".format(zMax)
+        self.ui.minEdit.setText(tMin)
+        self.ui.maxEdit.setText(tMax)
         self.__on_valueChanged()
+    def __calcHeightRange(self):
+        bounds=self.vtk_widget.pointCloud.getBounds()
+        zMin=bounds[4]
+        zMax=bounds[5]
+        r=zMax-zMin
+        return r,zMax,zMin
+    def __on_sliderReleased(self):
+        r,zMax,zMin=self.__calcHeightRange()
+        max=self.ui.verticalSlider_2.value()*r/100+zMin
+        min=self.ui.verticalSlider.value()*r/100+zMin
+        tMin = "{0:.3f}".format(min)
+        tMax = "{0:.3f}".format(max)
+        self.ui.minEdit.setText(tMin)
+        self.ui.maxEdit.setText(tMax)
     def __on_valueChanged(self):
         if self.ui.verticalSlider.value()>=self.ui.verticalSlider_2.value():
             self.ui.verticalSlider.setValue(self.ui.verticalSlider_2.value())
         if self.ui.verticalSlider_2.value()<=self.ui.verticalSlider.value():
             self.ui.verticalSlider_2.setValue(self.ui.verticalSlider.value())
-        bounds=self.vtk_widget.pointCloud.getBounds()
-        zMin=bounds[4]
-        zMax=bounds[5]
-        r=zMax-zMin
+        r,zMax,zMin=self.__calcHeightRange()
         max=self.ui.verticalSlider_2.value()*r/100+zMin
         min=self.ui.verticalSlider.value()*r/100+zMin
+        #max=float(self.ui.maxEdit.text())
+        #min=float(self.ui.minEdit.text())
         print(max,min)
         self.vtk_widget.pointCloud.setLUTRange(min,max)
         #self.vtk_widget.reset_Camera()
+        self.vtk_widget.refresh_renderer()
+    def __onTextChanged(self):
+        r,zMax,zMin=self.__calcHeightRange()
+        rMax=float(self.ui.maxEdit.text())
+        rMin=float(self.ui.minEdit.text())
+        print("rMax",rMax)
+        print("r",r)
+        mx=(rMax-zMin)/r*100
+        mn=(rMin-zMin)/r*100
+        print("mx",mx)
+        self.ui.verticalSlider.setValue(mn)
+        self.ui.verticalSlider_2.setValue(mx)
+        self.vtk_widget.pointCloud.setLUTRange(rMin,rMax)
         self.vtk_widget.refresh_renderer()
     def __GetDataFromThread(self):
         '''

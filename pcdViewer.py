@@ -128,6 +128,7 @@ class PCDviewer(QtWidgets.QFrame):
         cubeAxesActor.ZAxisMinorTickVisibilityOff()
         return cubeAxesActor
     def add_newData(self,path):
+        print("start load ply to add new data")
         xyz = genfromtxt(path,dtype=float,usecols=[0,1,2])
         minH=xyz[:,2].min()
         maxH=xyz[:,2].max()
@@ -145,7 +146,7 @@ class PCDviewer(QtWidgets.QFrame):
             self.renderer.RemoveActor(lastActor)
         actor=self.pointCloud.vtkActor
         #set uniform color
-        #actor.GetMapper().ScalarVisibilityOff()
+        actor.GetMapper().ScalarVisibilityOff()
         #actor.GetProperty().SetColor(1.0,0.0,0.0)
         #actor.GetProperty().SetPointSize(4)
         print("set actor color")
